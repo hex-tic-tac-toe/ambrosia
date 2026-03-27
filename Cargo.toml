@@ -1,0 +1,11 @@
+[package]
+name = "hex"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.102"
+clap = { version = "4.6.0", features = ["derive"] }
+num_cpus = "1.17.0"
+rand = "0.10.0"
+rayon = "1.11.0"

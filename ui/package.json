@@ -1,0 +1,19 @@
+{
+  "name": "ui",
+  "module": "src/index.ts",
+  "scripts": {
+    "start": "bun run src/index.ts"
+  },
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/culori": "^4.0.1",
+    "culori": "^4.0.2"
+  }
+}
