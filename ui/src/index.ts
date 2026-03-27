@@ -40,7 +40,7 @@ const app = Bun.serve({
             for (const o of players) {
                 htm += `<tr><th style='${B} border-right: 1px solid ${mirage.terminal.white.hex()}; padding-right: 10px; color: ${mirage.terminal.blue.hex()};'>${o}</th>`;  
                 for (const x of players) {
-                    const file = `../output/sets/${x}-${o}`;
+                    const file = `./output/sets/${x}-${o}`;
                     try {
                         await stat(file);
                         const content = await readdir(file);
@@ -108,7 +108,7 @@ const app = Bun.serve({
 
         '/sets/:x/:o/:round': async (req) => {
             const { x, o, round } = req.params;
-            const render = await Bun.$`./target/release/ascii_renderer ../output/sets/${x}-${o}/${round}.txt`;
+            const render = await Bun.$`./target/release/ascii_renderer ./output/sets/${x}-${o}/${round}.txt`;
             const txt = await render.text();
             const htm = `<!DOCTYPE html><html><head></head><body style='margin: 30px; background-color: ${mirage.ui.bg.hex()}; color: ${mirage.terminal.white.hex()}; font-size: 20pt; font-family: "Source Serif 4";'><span style='color: ${mirage.terminal.red.hex()};'>${x}</span> vs. <span style='color: ${mirage.terminal.blue.hex()};'>${o}</span> (round ${+round + 1}) ${ansiBlock(txt)}</body></html>`;
             return new Response(htm, {
