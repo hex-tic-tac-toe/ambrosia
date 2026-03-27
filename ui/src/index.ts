@@ -18,7 +18,7 @@ const app = Bun.serve({
         },
 
         '/sets': async () => {
-            const dir = await readdir('../output/sets');
+            const dir = await readdir('./output/sets');
             
             // render table where each column is player X and each row is player O, and each cell is a link to the set page for that pair of players
             // the value of each cell is the sum of wins, where if X wins +1, if O wins -1, and if draw 0
@@ -76,12 +76,12 @@ const app = Bun.serve({
 
         '/sets/:x/:o': async (req) => {
             const { x, o } = req.params;
-            const dir = await readdir(`../output/sets/${x}-${o}`);
+            const dir = await readdir(`./output/sets/${x}-${o}`);
             const rounds = dir.map(entry => entry.replace('.txt', '')).sort((a, b) => +a - +b);
             let htm = `<!DOCTYPE html><html><head></head><body style='margin: 30px; background-color: ${mirage.ui.bg.hex()}; color: ${mirage.terminal.white.hex()}; font-size: 20pt; font-family: "Source Serif 4";'><span style='color: ${mirage.terminal.red.hex()};'>${x}</span> vs. <span style='color: ${mirage.terminal.blue.hex()};'>${o}</span><br>`;
 
             for (const round of rounds) {
-                const file = `../output/sets/${x}-${o}/${round}.txt`;
+                const file = `./output/sets/${x}-${o}/${round}.txt`;
                 const f = Bun.file(file);
                 const content = await f.text();
                 let result = content.split('\n').find(line => line.startsWith('# '))?.split('# ')[1] || 'D';
@@ -108,7 +108,7 @@ const app = Bun.serve({
 
         '/sets/:x/:o/:round': async (req) => {
             const { x, o, round } = req.params;
-            const render = await Bun.$`../target/release/ascii_renderer ../output/sets/${x}-${o}/${round}.txt`;
+            const render = await Bun.$`./target/release/ascii_renderer ../output/sets/${x}-${o}/${round}.txt`;
             const txt = await render.text();
             const htm = `<!DOCTYPE html><html><head></head><body style='margin: 30px; background-color: ${mirage.ui.bg.hex()}; color: ${mirage.terminal.white.hex()}; font-size: 20pt; font-family: "Source Serif 4";'><span style='color: ${mirage.terminal.red.hex()};'>${x}</span> vs. <span style='color: ${mirage.terminal.blue.hex()};'>${o}</span> (round ${+round + 1}) ${ansiBlock(txt)}</body></html>`;
             return new Response(htm, {
