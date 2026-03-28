@@ -2,7 +2,7 @@
 This is a two-player game that takes place on an infinite hexagonal grid.
 
 ## Gameplay
-1. Player 1 starts with 1 hex at the center.
+1. Player 1 starts with 1 hex at `(0, 0)`.
 2. Player 2 replies with 2 hexes.
 3. After that, every turn is 2 hexes.
 4. The first player to connect six hexagons on one axis wins.
