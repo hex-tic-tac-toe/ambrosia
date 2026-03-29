@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.102"
 clap = { version = "4.6.0", features = ["derive"] }
+criterion = "0.8.2"
 num_cpus = "1.17.0"
 rand = "0.10.0"
 rayon = "1.11.0"
