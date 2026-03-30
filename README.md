@@ -1,5 +1,5 @@
 # ambrosia
-An experimental hexagonal tic-tac-toe bot written in Rust.
+An experimental hexagonal tic-tac-toe bot written in Rust by @trueharuu.
 
 ## Prerequisites
 This bot requires Rust to be installed. You can find an installation method for `rustup` and `cargo` here: https://rust-lang.org/
