@@ -1,4 +1,5 @@
 pub mod board;
+pub mod candidates;
 pub mod config;
 pub mod diag;
 pub mod game;

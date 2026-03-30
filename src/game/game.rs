@@ -6,8 +6,8 @@ use crate::{
     zobrist,
 };
 
-pub struct Game<'a> {
-    pub cfg: &'a Config,
+pub struct Game {
+    pub cfg: Config,
 
     pub board: Board,
     pub turn: Player,
@@ -18,8 +18,8 @@ pub struct Game<'a> {
     pub zhash: u64,
 }
 
-impl<'a> Game<'a> {
-    pub fn new(config: &'a Config) -> Self {
+impl Game {
+    pub fn new(config: Config) -> Self {
         let mut board = Board::new();
         let mut zhash = 0;
 
@@ -80,7 +80,7 @@ impl<'a> Game<'a> {
         }
     }
 
-    fn count_dir(&self, start: Hex, dir: Hex, player: Player) -> i32 {
+    pub fn count_dir(&self, start: Hex, dir: Hex, player: Player) -> i32 {
         let mut count = 0;
         let mut cur = start;
 
@@ -126,8 +126,8 @@ impl<'a> Game<'a> {
         None
     }
 
-    /// Returns Some(Vec<Hex>) of the winning line for the player, if any.
-    pub fn winning_line(&self, player: Player) -> Option<Vec<Hex>> {
+    /// Returns Vec<Hex> of the winning line for the player, if any.
+    pub fn winning_line(&self, player: Player) -> Vec<Hex> {
         for &hex in self.board.cells.keys() {
             if self.board.get(&hex) != Some(&player) {
                 continue;
@@ -162,11 +162,12 @@ impl<'a> Game<'a> {
                     // remove duplicates, sort for clarity
                     line.sort_unstable_by_key(|h| (h.0, h.1));
                     line.dedup();
-                    return Some(line);
+                    return line;
                 }
             }
         }
-        None
+
+        vec![]
     }
 
     /// Applies a half-turn (placing a piece and advancing the game state) and returns an undo record.

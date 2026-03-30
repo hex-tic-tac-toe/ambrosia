@@ -24,4 +24,8 @@ impl Board {
     pub fn place(&mut self, hex: Hex, player: Player) {
         self.cells.insert(hex, player);
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = (Hex, Player)> + '_ {
+        self.cells.iter().map(|(hex, player)| (*hex, *player))
+    }
 }

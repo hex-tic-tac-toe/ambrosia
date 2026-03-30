@@ -2,34 +2,33 @@ use crate::{
     ai::bot::Bot,
     game::{candidates::Candidates, game::Game, mv::Move},
 };
-use rand::{rng, seq::SliceRandom};
 
-pub struct RandomBot {
+pub struct FirstBot {
     candidates: Candidates,
 }
 
-impl RandomBot {
+impl FirstBot {
     pub fn new() -> Self {
         Self {
-            candidates: Candidates::new(8),
+            candidates: Candidates::new(2),
         }
     }
 }
 
-impl Bot for RandomBot {
+impl Bot for FirstBot {
     fn name(&self) -> &str {
-        "random"
+        "first"
     }
 
     fn choose(&mut self, game: &mut Game) -> Option<Move> {
         self.candidates.sync(game);
 
-        let mut vec = self.candidates.as_vec();
+        let vec = self.candidates.as_vec();
         if vec.len() < 2 {
             return None;
         }
 
-        vec.shuffle(&mut rng());
+        // vec.shuffle(&mut rng());
         let mv = Move(vec[0], vec[1]);
 
         Some(mv)

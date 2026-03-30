@@ -4,5 +4,5 @@ pub trait Bot {
     fn name(&self) -> &str;
     /// Returns a suggested move for the current player, or `None` if we resign.
     /// The caller must ensure that `game` is equal before and after calling this function.
-    fn choose(&self, game: &mut Game) -> Option<Move>;
+    fn choose(&mut self, game: &mut Game) -> Option<Move>;
 }

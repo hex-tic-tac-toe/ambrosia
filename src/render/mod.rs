@@ -1,59 +1,110 @@
 use crate::game::{board::Board, hex::Hex, player::Player};
 
-fn get_board_bounds(board: &Board) -> (i32, i32, i32, i32) {
-    let mut min_q = 0;
-    let mut max_q = 0;
-    let mut min_r = 0;
-    let mut max_r = 0;
+use std::f32::consts::PI;
+use tiny_skia::{Color, Paint, PathBuilder, Pixmap, Stroke, Transform};
 
-    for hex in board.cells.keys() {
-        min_q = min_q.min(hex.0);
-        max_q = max_q.max(hex.0);
-        min_r = min_r.min(hex.1);
-        max_r = max_r.max(hex.1);
-    }
+/// Flat-top hex layout. `size` is the circumradius (center to corner) in pixels.
+fn hex_corners_flat(cx: f32, cy: f32, size: f32) -> [(f32, f32); 6] {
+    std::array::from_fn(|i| {
+        let angle = PI / 180.0 * (60.0 * i as f32); // flat-top: 0°, 60°, 120°...
+        (cx + size * angle.cos(), cy + size * angle.sin())
+    })
+}
 
-    (min_q, max_q, min_r, max_r)
+/// Axial (q, r) → pixel center, flat-top layout.
+fn hex_to_pixel(q: i32, r: i32, size: f32, origin: (f32, f32)) -> (f32, f32) {
+    let x = origin.0 + size * (3.0 / 2.0 * q as f32);
+    let y = origin.1 + size * (3_f32.sqrt() / 2.0 * q as f32 + 3_f32.sqrt() * r as f32);
+    (x, y)
 }
 
 pub fn render_board(
-    board: &Board,
-    winning_line: &[Hex], // pass empty slice if no winner
-    winner: Option<Player>,
+    c: impl Iterator<Item = (Hex, Player)>,
+    output_path: &str,
+    winning_line: Vec<Hex>,
 ) {
-    use std::collections::HashSet;
+    let cells: Vec<(Hex, Player)> = c.collect();
+    let hex_size = 5.0;
+    let padding = 5.0;
+    let bg = Color::from_rgba8(255, 255, 255, 255);
+    let border = Color::from_rgba8(0, 0, 0, 255);
+    let border_winner = Color::from_rgba8(127, 127, 127, 255);
+    let border_width = 1.0;
+    // Compute bounding box over all cell centers.
+    let centers: Vec<(f32, f32)> = cells
+        .iter()
+        .map(|c| hex_to_pixel(c.0.0, c.0.1, hex_size, (0.0, 0.0)))
+        .collect();
 
-    let win_set: HashSet<_> = winning_line.iter().collect();
-    let (min_q, max_q, min_r, max_r) = get_board_bounds(board);
+    let min_x = centers.iter().map(|p| p.0).fold(f32::INFINITY, f32::min);
+    let min_y = centers.iter().map(|p| p.1).fold(f32::INFINITY, f32::min);
+    let max_x = centers
+        .iter()
+        .map(|p| p.0)
+        .fold(f32::NEG_INFINITY, f32::max);
+    let max_y = centers
+        .iter()
+        .map(|p| p.1)
+        .fold(f32::NEG_INFINITY, f32::max);
 
-    for r in min_r..=max_r {
-        // offset for pointy-top stagger
-        print!("{:width$}", "", width = (max_r - r) as usize);
-        for q in min_q..=max_q {
-            let hex = Hex(q, r);
-            let s = if win_set.contains(&hex) {
-                // winning line: white
-                match winner {
-                    Some(Player::X) => "\x1b[39mX\x1b[0m", // white
-                    Some(Player::O) => "\x1b[39mO\x1b[0m", // white
-                    None => "\x1b[39m?\x1b[0m",            // white
-                }
-            } else if hex == Hex::origin() {
-                // starting hex: bold green
-                "\x1b[1;32mX\x1b[0m"
-            } else if let Some(player) = board.cells.get(&hex) {
-                match player {
-                    Player::X => "\x1b[31mX\x1b[0m", // red
-                    Player::O => "\x1b[34mO\x1b[0m", // blue
-                }
-            } else {
-                "." // empty
-            };
+    // Shift origin so all cells sit within positive coordinates + padding.
+    let origin = (-min_x + padding + hex_size, -min_y + padding + hex_size);
 
-            print!("{} ", s);
+    let width = (max_x - min_x + 2.0 * (padding + hex_size)) as u32;
+    let height = (max_y - min_y + 2.0 * (padding + hex_size)) as u32;
+
+    let mut pixmap = Pixmap::new(width, height).expect("image too large");
+    pixmap.fill(bg);
+
+    for (cell, &(raw_cx, raw_cy)) in cells.iter().zip(centers.iter()) {
+        let cx = raw_cx + origin.0;
+        let cy = raw_cy + origin.1;
+        let corners = hex_corners_flat(cx, cy, hex_size);
+
+        // Build filled hex path.
+        let mut pb = PathBuilder::new();
+        pb.move_to(corners[0].0, corners[0].1);
+        for &(x, y) in &corners[1..] {
+            pb.line_to(x, y);
         }
+        pb.close();
+        let path = pb.finish().unwrap();
 
-        println!();
+        // Fill.
+        let mut paint = Paint::default();
+        if winning_line.contains(&cell.0) {
+            paint.set_color(match cell.1 {
+                Player::X => Color::from_rgba8(255, 127, 127, 255),
+                Player::O => Color::from_rgba8(127, 127, 255, 255),
+            });
+        } else {
+            paint.set_color(match cell.1 {
+                Player::X => Color::from_rgba8(255, 0, 0, 255),
+                Player::O => Color::from_rgba8(0, 0, 255, 255),
+            });
+        }
+        paint.anti_alias = true;
+        pixmap.fill_path(
+            &path,
+            &paint,
+            tiny_skia::FillRule::Winding,
+            Transform::identity(),
+            None,
+        );
+
+        // Border.
+        if border_width > 0.0 {
+            let mut stroke_paint = Paint::default();
+            stroke_paint.set_color(border);
+            stroke_paint.anti_alias = true;
+            let stroke = Stroke {
+                width: border_width,
+                ..Default::default()
+            };
+            pixmap.stroke_path(&path, &stroke_paint, &stroke, Transform::identity(), None);
+        }
     }
-    println!();
+
+    println!("{}x{}", pixmap.width(), pixmap.height());
+    pixmap.save_png(output_path).unwrap();
 }
